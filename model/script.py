@@ -2,13 +2,19 @@ from flask import Flask, request, jsonify
 from langdetect import detect, DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
 from google.cloud import translate_v2 as translate
+from google.cloud import texttospeech
+from google.cloud import language_v1
 import os
+from summarizer import Summarizer
 
 DetectorFactory.seed = 0
 
 app = Flask(__name__)
 
 translate_client = translate.Client()
+tts_client = texttospeech.TextToSpeechClient()
+language_client = language_v1.LanguageServiceClient()
+summarizer = Summarizer()
 
 @app.route('/detect_language', methods=['POST'])
 def detect_language():
@@ -121,28 +127,88 @@ def supported_languages():
 
 @app.route('/text_to_speech', methods=['POST'])
 def text_to_speech():
-    # Placeholder for text-to-speech integration
-    return jsonify({'error': 'Text-to-speech feature is not implemented yet'}), 501
+    data = request.get_json()
+    if not data or 'text' not in data or 'language_code' not in data:
+        return jsonify({'error': 'Invalid input, "text" and "language_code" are required'}), 400
+    
+    text = data['text']
+    language_code = data['language_code']
+    
+    try:
+        synthesis_input = texttospeech.SynthesisInput(text=text)
+        voice = texttospeech.VoiceSelectionParams(
+            language_code=language_code,
+            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+        )
+        audio_config = texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.MP3
+        )
+        
+        response = tts_client.synthesize_speech(
+            input=synthesis_input, voice=voice, audio_config=audio_config
+        )
+        
+        return jsonify({'audio_content': response.audio_content.decode('utf-8')})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/text_summary', methods=['POST'])
 def text_summary():
-    # Placeholder for text summarization feature
-    return jsonify({'error': 'Text summarization feature is not implemented yet'}), 501
+    data = request.get_json()
+    if not data or 'text' not in data:
+        return jsonify({'error': 'Invalid input, "text" is required'}), 400
+    
+    text = data['text']
+    
+    try:
+        summary = summarizer(text)
+        return jsonify({'summary': summary})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/sentiment_analysis', methods=['POST'])
 def sentiment_analysis():
-    # Placeholder for sentiment analysis feature
-    return jsonify({'error': 'Sentiment analysis feature is not implemented yet'}), 501
+    data = request.get_json()
+    if not data or 'text' not in data:
+        return jsonify({'error': 'Invalid input, "text" is required'}), 400
+    
+    text = data['text']
+    
+    try:
+        document = language_v1.Document(content=text, type_=language_v1.Document.Type.PLAIN_TEXT)
+        sentiment = language_client.analyze_sentiment(request={'document': document}).document_sentiment
+        
+        return jsonify({
+            'score': sentiment.score,
+            'magnitude': sentiment.magnitude
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/custom_language_model', methods=['POST'])
 def custom_language_model():
-    # Placeholder for custom language model integration
-    return jsonify({'error': 'Custom language model feature is not implemented yet'}), 501
+    data = request.get_json()
+    if not data or 'text' not in data or 'model_name' not in data:
+        return jsonify({'error': 'Invalid input, "text" and "model_name" are required'}), 400
+    
+    text = data['text']
+    model_name = data['model_name']
+    
+    try:
+        document = language_v1.Document(content=text, type_=language_v1.Document.Type.PLAIN_TEXT)
+        response = language_client.classify_text(request={
+            'document': document,
+            'classifier_id': model_name
+        })
+        
+        categories = [
+            {'name': category.name, 'confidence': category.confidence}
+            for category in response.categories
+        ]
+        
+        return jsonify({'categories': categories})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    print("Starting Flask application...")
     app.run(debug=True)
-else:
-    print("This script is being imported, not run directly.")
-
-print("This line will always be executed.")
