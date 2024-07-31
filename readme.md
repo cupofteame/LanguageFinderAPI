@@ -1,6 +1,6 @@
 # Enhanced Language Detection and Translation API
 
-This Flask-based API provides comprehensive language-related services using Google Cloud APIs and other libraries.
+A Flask-based API that provides comprehensive language-related services using Google Cloud APIs and other libraries.
 
 ## Features
 
@@ -19,21 +19,41 @@ This Flask-based API provides comprehensive language-related services using Goog
 ## Setup
 
 1. Clone this repository
-2. Install the required dependencies:
    ```
-   pip install flask langdetect google-cloud-translate google-cloud-texttospeech google-cloud-language bert-extractive-summarizer
+   git clone https://github.com/yourusername/language-service-api.git
+   cd language-service-api
    ```
-3. Set up Google Cloud credentials:
+
+2. Create a virtual environment (optional but recommended)
+   ```
+   python -m venv venv
+   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+   ```
+
+3. Install the required dependencies:
+   ```
+   pip install flask flask-cors langdetect google-cloud-translate google-cloud-texttospeech google-cloud-language bert-extractive-summarizer
+   ```
+
+4. Set up Google Cloud credentials:
    - Create a Google Cloud project
    - Enable the Cloud Translation API, Cloud Text-to-Speech API, and Cloud Natural Language API
    - Create a service account and download the JSON key
-   - Set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to the path of your JSON key file
+   - Set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to the path of your JSON key file:
+     ```
+     export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/credentials.json"
+     ```
+     On Windows, use `set` instead of `export`.
+
+## CORS Support
+
+This API includes CORS (Cross-Origin Resource Sharing) support, allowing it to handle requests from web applications hosted on different domains or ports. This is useful for local development and testing.
 
 ## Usage
 
 Start the Flask application:
 ```
-python app.py
+python script.py
 ```
 The server will start on `http://127.0.0.1:5000/`.
 

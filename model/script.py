@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from langdetect import detect, DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
 from google.cloud import translate_v2 as translate
@@ -10,11 +11,13 @@ from summarizer import Summarizer
 DetectorFactory.seed = 0
 
 app = Flask(__name__)
+CORS(app)
 
 translate_client = translate.Client()
 tts_client = texttospeech.TextToSpeechClient()
 language_client = language_v1.LanguageServiceClient()
 summarizer = Summarizer()
+
 
 @app.route('/detect_language', methods=['POST'])
 def detect_language():
