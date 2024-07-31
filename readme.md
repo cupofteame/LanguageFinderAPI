@@ -33,7 +33,7 @@ This Flask-based API provides comprehensive language-related services using Goog
 
 Start the Flask application:
 ```
-python app.py
+python model.py
 ```
 The server will start on `http://127.0.0.1:5000/`.
 
